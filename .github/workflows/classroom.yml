@@ -139,7 +139,7 @@ jobs:
           result-encoding: string
 
   autograding-reporter:          
-    needs: [any-manual-run-ko-check, any-manual-run-ok-check, any-manual-run-with-branchs-check, any-PR-run-check, simply-wf-file-check]
+    needs: [any-manual-run-ko-check, any-manual-run-ok-check, any-PR-run-check, simply-wf-file-check]
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'github-classroom[bot]' && always() }}  
     steps:       
