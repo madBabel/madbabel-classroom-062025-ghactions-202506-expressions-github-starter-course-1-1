@@ -1,163 +1,60 @@
 name: Autograding Tests
-on:
+on:  
+  workflow_dispatch: 
   repository_dispatch:
-  workflow_dispatch:
 permissions:
   checks: write
   actions: read
   contents: read
-
-
 jobs:
-  get-workflow-id:
-    outputs:
-      run_id: ${{steps.get_workflow.outputs.run_id}}
+  simply-wf-file-check:
+    if: github.actor != 'github-classroom[bot]'        
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    steps:          
-      - name: Get workFlow Run
-        id: get_workflow
-        uses: madBabel/get-run-id-of-wf-action@v2
-        with:
-            workflow-file: '03-workflow-runners.yaml'    
-            status: 'success'
+      - name: Check if custom YAML file exists
+        run: |
+          if [[ ! -f .github/workflows/expressions.yaml ]]; then
+            echo "Error: expressions.yaml is missing!"
+            exit 1
+          fi
+          echo "expressions.yaml file exists."
 
-  checkJobs:   
-    needs: get-workflow-id
-    runs-on: ubuntu-latest    
-    outputs: 
-      ubuntuExecuted: ${{steps.check_Steps_for_ubuntu_echo.outputs.stepsExecuted}}
-      windowsExecuted: ${{steps.check_Steps_for_windows_echo.outputs.stepsExecuted}}
-      macExecuted: ${{steps.check_Steps_for_mac_echo.outputs.stepsExecuted}}
-    steps:     
+      - name: Check for expected workflow triggers
+        run: |
+          if ! grep -q "workflow_dispatch" .github/workflows/expressions.yaml; then
+            echo "Error: 'workflow_dispatch' trigger is missing!"
+            exit 1
+          fi
+          if ! grep -q "pull_request" .github/workflows/expressions.yaml; then
+            echo "Error: 'pull_request' trigger is missing!"
+            exit 1
+          fi
+          echo "Both triggers are present."
 
-      - name: Check step executed for ubuntu-echo
-        id: check_Steps_for_ubuntu_echo
-        uses: madBabel/check-jobs-steps-gha-action@v3
-        with:
-          run-id: ${{needs.get-workflow-id.outputs.run_id}}
-          job-to-execute: ubuntu-echo      
-        
-      - name: Check step executed for windows-echo
-        id: check_Steps_for_windows_echo
-        uses: madBabel/check-jobs-steps-gha-action@v3
-        with:
-          run-id: ${{needs.get-workflow-id.outputs.run_id}}
-          job-to-execute: windows-echo    
+      - name: Verify jobs in the YAML file
+        run: |
+          grep -q "debug-check" .github/workflows/expressions.yaml || (echo "Missing job: debug-check" && exit 1)
+          grep -q "functions-pr-data" .github/workflows/expressions.yaml || (echo "Missing job: functions-pr-data" && exit 1)
+          echo "All required jobs are present."
 
-      - name: Check step executed for mac-echo
-        id: check_Steps_for_mac_echo
-        uses: madBabel/check-jobs-steps-gha-action@v3
-        with:
-          run-id: ${{needs.get-workflow-id.outputs.run_id}}
-          job-to-execute: mac-echo      
-          
+      - name: Verify steps in 'debug-check' job
+        run: |
+          grep -q "\[Debug\] Print Debug Info" .github/workflows/expressions.yaml || (echo "Missing step: Print Debug Info" && exit 1)
+          grep -q "\[Debug\] Triggered from Main" .github/workflows/expressions.yaml || (echo "Missing step: Triggered from Main" && exit 1)
+          echo "Steps in 'debug-check' verified."
 
-  autograding-reporter:    
-      needs: [checkJobs,get-workflow-id]
-      runs-on: ubuntu-latest    
-      steps:           
-      - name: Run Autograding Step Tests for ub-echo
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test1
-        with:
-            test-name: 'Test Step executed'   
-            command: 'echo ${{needs.checkJobs.outputs.ubuntuExecuted}}'
-            input: ''
-            expected-output: 'true'
-            comparison-method: 'exact'  
-            max-score: 12
-      - name: Run Autograding Step Tests for win-echo
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test2
-        with:
-            test-name: 'Test Step executed'   
-            command: 'echo ${{needs.checkJobs.outputs.windowsExecuted}}'
-            input: ''
-            expected-output: 'true'
-            comparison-method: 'exact'  
-            max-score: 12 
-      - name: Run Autograding Step Tests for mac-echo
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test3
-        with:
-            test-name: 'Test Step executed'   
-            command: 'echo ${{needs.checkJobs.outputs.macExecuted}}'
-            input: ''
-            expected-output: 'true'
-            comparison-method: 'exact'  
-            max-score: 16 
+      - name: Verify steps in 'functions-pr-data' job
+        run: |
+          grep -q "Print PR Info" .github/workflows/expressions.yaml || (echo "Missing step: Print PR Info" && exit 1)
+          grep -q "Bug Check" .github/workflows/expressions.yaml || (echo "Missing step: Bug Check" && exit 1)
+          grep -q "Sleep and Cancel" .github/workflows/expressions.yaml || (echo "Missing step: Sleep and Cancel" && exit 1)
+          echo "Steps in 'functions-pr-data' verified."
 
-      - name: Get logs of the latest workflow run
-        id: get_logs
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const run_id = ${{needs.get-workflow-id.outputs.run_id}}
-            const logs = await github.rest.actions.downloadWorkflowRunLogs({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id
-            });
-        
-            const zipUrl = logs.url; 
-
-            if (!zipUrl) {
-              core.setFailed('ZIP URL not found in logs.');
-            }
-            
-            core.setOutput('zip_url', zipUrl); // Envía la URL como salida para usar en el siguiente paso
-
-      - name: Download and unzip the file
-        if: steps.get_logs.outputs.zip_url != ''
-        run: |      
-          curl -L "${{ steps.get_logs.outputs.zip_url }}" -o downloaded_file.zip        
-          mkdir -p unzipped_files
-          unzip downloaded_file.zip -d unzipped_files
-          ls unzipped_files
-
-      - name: Run Autograding Tests for console unbuntu
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test4
-        with:
-            test-name: 'Test ubuntu in logs'   
-            command: 'tail -n3 unzipped_files/ubuntu*/*Mostrar*SO*.txt'
-            input: 'OK'
-            expected-output: '.*Runner de Ubuntu.+[\n]*.*Linux.*'
-            comparison-method: 'regex'
-            max-score: 20     
-
-      - name: Run Autograding Tests for console windows
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test5
-        with:
-            test-name: 'Test windows in logs'   
-            command: 'tail -n3 unzipped_files/windows*/*Mostrar*SO.txt'
-            input: 'OK'
-            expected-output: '.*Runner de Windows.+[\n]*.*Windows.*'
-            comparison-method: 'regex'
-            max-score: 20   
-        
-
-      - name: Run Autograding Tests for console mac
-        uses: classroom-resources/autograding-io-grader@v1      
-        id: test6
-        with:
-            test-name: 'Test mac in logs'   
-            command: 'tail -n3 unzipped_files/mac*/*Mostrar*SO*.txt'
-            input: 'OK'
-            expected-output: '.*Runner de MacOS.+[\n]*.*macOS.*'
-            comparison-method: 'regex'
-            max-score: 20  
-            
-      - name: Autograding Reporter
-        uses: classroom-resources/autograding-grading-reporter@v1     
-        with:
-           runners: test1,test2,test3,test4,test5,test6
-        env:
-          TEST1_RESULTS: "${{ steps.test1.outputs.result }}"
-          TEST2_RESULTS: "${{ steps.test2.outputs.result }}"   
-          TEST3_RESULTS: "${{ steps.test3.outputs.result }}"   
-          TEST4_RESULTS: "${{ steps.test4.outputs.result }}"   
-          TEST5_RESULTS: "${{ steps.test5.outputs.result }}"   
-          TEST6_RESULTS: "${{ steps.test6.outputs.result }}"     
+      - name: Check for valid input definitions in workflow_dispatch
+        run: |
+          grep -q "inputs:" .github/workflows/expressions.yaml || (echo "Missing 'inputs' section!" && exit 1)
+          grep -q "debug:" .github/workflows/expressions.yaml || (echo "Missing 'debug' input!" && exit 1)
+          grep -q "fail:" .github/workflows/expressions.yaml || (echo "Missing 'fail' input!" && exit 1)
+          echo "Inputs section verified."
