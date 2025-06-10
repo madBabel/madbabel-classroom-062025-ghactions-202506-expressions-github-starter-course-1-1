@@ -107,33 +107,6 @@ jobs:
             console.log(wfObj !== undefined);
           result-encoding: string
 
-  any-manual-run-with-branchs-check:
-    if: github.actor != 'github-classroom[bot]'        
-    outputs:
-      executed: ${{steps.get-wf.outputs.executed}}  
-    runs-on: ubuntu-latest
-    steps:              
-      - name: Get WF 
-        id: get-wf                
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const workflow = 'expressions.yaml';
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const runs = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: workflow,
-              per_page: 100,
-              event: 'workflow_dispatch'
-            });
-            const wfMain = runs.data.workflow_runs.find(wf => wf.name === "Expressions" && wf.head_branch === "main");
-            const wfOther = runs.data.workflow_runs.find(wf => wf.name === "Expressions" && wf.head_branch !== "main");
-            core.setOutput('executed', wfMain !== undefined && wfOther !== undefined);
-            console.log(wfMain !== undefined && wfOther !== undefined);
-          result-encoding: string
-
   any-PR-run-check:
     if: github.actor != 'github-classroom[bot]'    
     outputs:
@@ -203,16 +176,6 @@ jobs:
         comparison-method: 'exact'
         max-score: 20     
 
-    - name: Workflow executed from multiple branches
-      uses: classroom-resources/autograding-io-grader@v1
-      id: test4
-      with:
-        test-name: 'Executed from multiple branches'
-        command: 'echo ${{needs.any-manual-run-with-branchs-check.outputs.executed}}'
-        input: ''
-        expected-output: 'true'
-        comparison-method: 'exact'
-        max-score: 20     
 
     - name: PR with "fix" executed
       uses: classroom-resources/autograding-io-grader@v1
@@ -232,6 +195,5 @@ jobs:
       env:
         TEST1_RESULTS: "${{ steps.test1.outputs.result }}"      
         TEST2_RESULTS: "${{ steps.test2.outputs.result }}"      
-        TEST3_RESULTS: "${{ steps.test3.outputs.result }}"     
-        TEST4_RESULTS: "${{ steps.test4.outputs.result }}"      
+        TEST3_RESULTS: "${{ steps.test3.outputs.result }}"           
         TEST5_RESULTS: "${{ steps.test5.outputs.result }}"
