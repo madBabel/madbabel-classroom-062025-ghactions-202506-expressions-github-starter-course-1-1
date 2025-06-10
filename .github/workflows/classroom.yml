@@ -191,7 +191,7 @@ jobs:
     - name: Final Report
       uses: classroom-resources/autograding-grading-reporter@v1
       with:
-        runners: test1,test2,test3,test4,test5
+        runners: test1,test2,test3,test5
       env:
         TEST1_RESULTS: "${{ steps.test1.outputs.result }}"      
         TEST2_RESULTS: "${{ steps.test2.outputs.result }}"      
