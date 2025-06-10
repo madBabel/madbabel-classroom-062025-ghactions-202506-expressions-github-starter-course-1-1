@@ -152,7 +152,7 @@ jobs:
         input: ''
         expected-output: 'success'
         comparison-method: 'exact'
-        max-score: 20         
+        max-score: 40         
 
     - name: Manual execution with failure
       uses: classroom-resources/autograding-io-grader@v1
