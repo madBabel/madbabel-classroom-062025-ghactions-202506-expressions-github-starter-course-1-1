@@ -56,7 +56,7 @@ jobs:
                 echo "PR Labels:"
                 cat <<EOF
                 ${{ toJSON(github.event.pull_request.labels) }}
-                 EOF
+                EOF
 
             - name: Bug Check
               if: ${{ contains(github.event.pull_request.title, 'fix' ) && !cancelled() }}
