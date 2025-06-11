@@ -65,7 +65,7 @@ jobs:
             - name: Sleep and Cancel
               run: |
                echo " Sleep and Cancel"
-               sleep 20 git 
+               sleep 20 
             - name: Failing Step
               run: |
                echo " Failing Step"
