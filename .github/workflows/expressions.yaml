@@ -1,0 +1,54 @@
+name: Expressions
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug output'
+        required: false
+        default: false
+        type: boolean
+      fail:
+        description: 'Force failure'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  WORKFLOW_VAR: 'This is a workflow-level variable'
+  OVERWRITTEN: 'Default workflow value'
+
+jobs:
+  debug-check:
+    runs-on: ubuntu-latest
+    env:
+      JOB_VAR: 'This is a job-level variable'
+      OVERWRITTEN: 'Overwritten at job level'
+    steps:
+      - name: "[Debug] Print Debug Info"
+        if: ${{ inputs.debug == true }}
+        run: |
+          echo "Triggered by: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Runner OS: ${{ runner.os }}"
+
+      - name: "[Debug] Triggered from Main"
+        if: ${{ inputs.debug == true && github.ref == 'refs/heads/main' }}
+        run: echo "Triggered from main branch!"
+
+      - name: "Print Variables"
+        env:
+          STEP_VAR: 'Step-level variable'
+        run: |
+          echo "Step var: ${{ env.STEP_VAR }}"
+          echo "Job var: ${{ env.JOB_VAR }}"
+          echo "Workflow var: ${{ env.WORKFLOW_VAR }}"
+          echo "Overwritten: ${{ env.OVERWRITTEN }}"
+
+      - name: "Overwrite and Print"
+        env:
+          OVERWRITTEN: 'Overwritten at step level'
+        run: |
+          echo "Overwritten var: $OVERWRITTEN"
