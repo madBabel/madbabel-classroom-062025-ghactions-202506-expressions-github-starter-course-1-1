@@ -52,17 +52,20 @@ jobs:
             - name: Print PR labels
               if:  ${{ github.event_name == 'pull_request' }}
               run: |
-                cat << EOF
+                echo "PR Title: ${{ github.event.pull_request.title }}"
+                echo "PR Labels:"
+                cat <<EOF
                 ${{ toJSON(github.event.pull_request.labels) }}
-                EOF
+                 EOF
+
             - name: Bug Check
-              if: ${{ contains(github.event.pull_request.head, 'fix' ) && !cancelled() }}
+              if: ${{ contains(github.event.pull_request.title, 'fix' ) && !cancelled() }}
               run: |
                echo " Bug Check"
             - name: Sleep and Cancel
               run: |
                echo " Sleep and Cancel"
-               sleep 20 
+               sleep 20 git 
             - name: Failing Step
               run: |
                echo " Failing Step"
