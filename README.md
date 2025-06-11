@@ -208,8 +208,6 @@ graph TD
 
 Steps for functions-pr-data
 
-
-
 ```mermaid
 graph TD  
     G[J: functions-pr-data]
