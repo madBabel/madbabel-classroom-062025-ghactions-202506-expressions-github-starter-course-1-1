@@ -40,4 +40,32 @@ jobs:
                     echo "Step var: ${{ env.STEP_VAR }}" 
                     echo "Workflow var: ${{ env.WORKFLOW_VAR }}" 
                     echo "Overwritten: ${{ env.OVERWRITTEN }}"
-                    
+            - name: Overwrite & Print
+              env:
+                OVERWRITTEN: "Overwritten at step level"
+              run: |
+                echo "Overwritten var: $OVERWRITTEN"      
+    functions-pr-data:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Print PR labels
+              if:  ${{ github.event_name == 'pull_request' }}
+              run: |
+                cat << EOF
+                ${{ toJSON(github.event.pull_request.labels) }}
+                EOF
+            - name: Bug Check
+              run: |
+               echo " Bug Check"
+            - name: Sleep and Cancel
+              run: |
+               echo " Sleep and Cancel"
+            - name: Failing Step
+              run: |
+               echo " Failing Step"
+            - name: Conditional Step - Success
+              run: |
+               echo " Conditional Step - Success"
+            - name: Conditional Step - Failure
+              run: |
+               echo " Conditional Step - Failure"
