@@ -67,11 +67,19 @@ jobs:
                echo " Sleep and Cancel"
                sleep 20 
             - name: Failing Step
+              if: ${{ inputs.fail == true }}
               run: |
                echo " Failing Step"
+               exit 1
             - name: Conditional Step - Success
+              if: success()
               run: |
                echo " Conditional Step - Success"
             - name: Conditional Step - Failure
+              if: failure()
               run: |
                echo " Conditional Step - Failure"
+            - name: On Cancel
+              if: cancelled()
+              run: |
+               echo " Worflow Cancelled Step"
